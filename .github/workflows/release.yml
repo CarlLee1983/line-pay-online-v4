@@ -31,25 +31,18 @@ jobs:
       - name: Run tests
         run: composer test
 
-      - name: Generate changelog
-        id: changelog
-        uses: metcalfc/changelog-generator@v4.6.2
-        with:
-          myToken: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           body: |
-            ## Changes in ${{ github.ref_name }}
-
-            ${{ steps.changelog.outputs.changelog }}
-
             ## Installation
 
             ```bash
             composer require carllee/line-pay-online-v4:${{ github.ref_name }}
             ```
-          generate_release_notes: true
+
+            ---
+            *See the automatically generated release notes below for changes.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
