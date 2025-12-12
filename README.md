@@ -4,7 +4,8 @@
 [![PHP Version](https://img.shields.io/packagist/php-v/carllee/line-pay-online-v4)](https://packagist.org/packages/carllee/line-pay-online-v4)
 [![License](https://img.shields.io/github/license/CarlLee1983/line-pay-online-v4-php)](LICENSE)
 
-Modern, type-safe LINE Pay Online V4 API SDK for PHP with Laravel support.
+**PHP SDK for LINE Pay Online API V4.**
+A type-safe, strictly typed library featuring a **Fluent Builder** for constructing complex payment requests. Native support for **Laravel** with auto-discovery and Facades.
 
 **🌐 Language / 語言 / 言語 / ภาษา:**
 [English](./README.md) | [繁體中文](./README_ZH.md) | [日本語](./README_JA.md) | [ภาษาไทย](./README_TH.md)
@@ -30,6 +31,28 @@ Modern, type-safe LINE Pay Online V4 API SDK for PHP with Laravel support.
 
 ```bash
 composer require carllee/line-pay-online-v4
+```
+
+## Payment Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User (Browser)
+    participant S as Merchant Server
+    participant L as LINE Pay API
+    
+    U->>S: 1. Checkout (Click Pay)
+    S->>L: POST /v3/payments/request
+    L-->>S: Returns paymentUrl (Web/App)
+    S-->>U: 302 Redirect to paymentUrl
+    
+    Note over U,L: User approves payment on LINE App/Web
+    
+    L-->>U: Redirect to confirmUrl (with transactionId)
+    U->>S: GET /payment/confirm?transactionId=...
+    S->>L: POST /v3/payments/{id}/confirm
+    L-->>S: 200 OK (Payment Complete)
+    S-->>U: Show Success Page
 ```
 
 ## Quick Start
@@ -78,6 +101,8 @@ $paymentUrl = $response['info']['paymentUrl']['web'];
 ```
 
 ## Laravel Integration
+
+The package supports **Laravel Package Discovery**. Just install it via composer, and the ServiceProvider and Facade will be registered automatically.
 
 ### Configuration
 
@@ -227,6 +252,51 @@ try {
     echo "Error Message: " . $e->getReturnMessage();
 }
 ```
+
+## Common Pitfalls & Troubleshooting
+
+### 🚫 Double Confirmation (Error 1198)
+
+Each `transactionId` can only be confirmed **once**.
+
+* If users refresh the success page, your server might try to confirm again.
+* **Solution:** Check your local database order status *before* calling `$client->confirm()`. If it's already "PAID", skip the API call.
+
+```php
+// In your confirm callback handler
+$order = Order::where('transaction_id', $transactionId)->first();
+
+if ($order->status === 'PAID') {
+    // Already confirmed, just show success page
+    return redirect()->route('payment.success');
+}
+
+// Only call confirm if not yet paid
+$response = $client->confirm($transactionId, $order->amount, Currency::TWD);
+$order->update(['status' => 'PAID']);
+```
+
+### 💰 Amount Mismatch (Error 1106)
+
+The amount passed to `confirm()` must match the amount requested exactly.
+
+* **Tip:** Do not trust the amount in the URL query string (if any). Always retrieve the amount from your own database using the `orderId`.
+
+```php
+// ✗ BAD: Using amount from query string
+$amount = $request->input('amount'); // Vulnerable!
+
+// ✓ GOOD: Using amount from database
+$order = Order::findOrFail($orderId);
+$amount = $order->amount;
+```
+
+### ⏱️ Transaction Expiration
+
+The `paymentUrl` and `transactionId` have an expiration time (usually 20 minutes). If the user takes too long, the confirm call will fail.
+
+* Store the expiration time and show a countdown to the user.
+* Handle the expiration error gracefully and allow the user to restart the payment.
 
 ## Testing
 

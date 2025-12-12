@@ -4,7 +4,8 @@
 [![PHP Version](https://img.shields.io/packagist/php-v/carllee/line-pay-online-v4)](https://packagist.org/packages/carllee/line-pay-online-v4)
 [![License](https://img.shields.io/github/license/CarlLee1983/line-pay-online-v4-php)](LICENSE)
 
-現代化、類型安全的 LINE Pay Online V4 API PHP SDK，支援 Laravel 框架。
+**LINE Pay Online API V4 PHP SDK。**
+類型安全、嚴格類型的程式庫，提供 **Fluent Builder** 建構複雜的付款請求。原生支援 **Laravel**，具備自動發現和 Facade 功能。
 
 **🌐 Language / 語言 / 言語 / ภาษา:**
 [English](./README.md) | [繁體中文](./README_ZH.md) | [日本語](./README_JA.md) | [ภาษาไทย](./README_TH.md)
@@ -78,6 +79,8 @@ $paymentUrl = $response['info']['paymentUrl']['web'];
 ```
 
 ## Laravel 整合
+
+本套件支援 **Laravel Package Discovery**。只需透過 composer 安裝，ServiceProvider 和 Facade 將自動註冊。
 
 ### 設定
 
@@ -227,6 +230,51 @@ try {
     echo "錯誤訊息: " . $e->getReturnMessage();
 }
 ```
+
+## 常見問題與疑難排解
+
+### 🚫 重複確認（Error 1198）
+
+每個 `transactionId` 只能確認**一次**。
+
+* 如果用戶刷新成功頁面，您的服務器可能會試圖再次確認。
+* **解決方案：** 在呼叫 `$client->confirm()` **之前**檢查本地資料庫的訂單狀態。如果已經是 "PAID"，跳過 API 呼叫。
+
+```php
+// 在您的確認回呼處理程式中
+$order = Order::where('transaction_id', $transactionId)->first();
+
+if ($order->status === 'PAID') {
+    // 已經確認，直接顯示成功頁面
+    return redirect()->route('payment.success');
+}
+
+// 只有尚未付款時才呼叫 confirm
+$response = $client->confirm($transactionId, $order->amount, Currency::TWD);
+$order->update(['status' => 'PAID']);
+```
+
+### 💰 金額不符（Error 1106）
+
+傳遞給 `confirm()` 的金額必須與請求的金額完全一致。
+
+* **提示：** 不要信任 URL 查詢字串中的金額（如果有的話）。始終使用 `orderId` 從您自己的資料庫取得金額。
+
+```php
+// ✗ 錯誤：使用查詢字串中的金額
+$amount = $request->input('amount'); // 有風險！
+
+// ✓ 正確：使用資料庫中的金額
+$order = Order::findOrFail($orderId);
+$amount = $order->amount;
+```
+
+### ⏱️ 交易過期
+
+`paymentUrl` 和 `transactionId` 有過期時間（通常 20 分鐘）。如果用戶花費太長時間，確認呼叫將會失敗。
+
+* 儲存過期時間並向用戶顯示倒數計時。
+* 優雅地處理過期錯誤，允許用戶重新開始付款。
 
 ## 測試
 

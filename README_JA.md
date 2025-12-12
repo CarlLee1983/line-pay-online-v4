@@ -4,7 +4,8 @@
 [![PHP Version](https://img.shields.io/packagist/php-v/carllee/line-pay-online-v4)](https://packagist.org/packages/carllee/line-pay-online-v4)
 [![License](https://img.shields.io/github/license/CarlLee1983/line-pay-online-v4-php)](LICENSE)
 
-モダンでタイプセーフな LINE Pay Online V4 API PHP SDK。Laravel対応。
+**LINE Pay Online API V4 PHP SDK。**
+タイプセーフで厳格な型付けのライブラリ。複雑な決済リクエストを構築する **Fluent Builder** を提供。**Laravel** の自動検出とFacadeをネイティブサポート。
 
 **🌐 Language / 語言 / 言語 / ภาษา:**
 [English](./README.md) | [繁體中文](./README_ZH.md) | [日本語](./README_JA.md) | [ภาษาไทย](./README_TH.md)
@@ -78,6 +79,8 @@ $paymentUrl = $response['info']['paymentUrl']['web'];
 ```
 
 ## Laravel統合
+
+このパッケージは **Laravel Package Discovery** をサポートしています。composerでインストールするだけで、ServiceProviderとFacadeが自動的に登録されます。
 
 ### 設定
 
@@ -226,6 +229,51 @@ try {
     echo "エラーメッセージ: " . $e->getReturnMessage();
 }
 ```
+
+## よくある問題とトラブルシューティング
+
+### 🚫 重複確認（Error 1198）
+
+各 `transactionId` は**一度だけ**確認できます。
+
+* ユーザーが成功ページを更新すると、サーバーが再度確認を試みる可能性があります。
+* **解決策：** `$client->confirm()` を呼び出す**前に**、ローカルデータベースの注文ステータスを確認してください。既に "PAID" の場合はAPI呼び出しをスキップ。
+
+```php
+// 確認コールバックハンドラー内
+$order = Order::where('transaction_id', $transactionId)->first();
+
+if ($order->status === 'PAID') {
+    // 既に確認済み、成功ページを表示
+    return redirect()->route('payment.success');
+}
+
+// 未払いの場合のみ confirm を呼び出す
+$response = $client->confirm($transactionId, $order->amount, Currency::JPY);
+$order->update(['status' => 'PAID']);
+```
+
+### 💰 金額不一致（Error 1106）
+
+`confirm()` に渡す金額は、リクエストした金額と完全に一致する必要があります。
+
+* **ヒント：** URLクエリストリングの金額（ある場合）を信用しないでください。常に `orderId` を使用して自分のデータベースから金額を取得してください。
+
+```php
+// ✗ 悪い例：クエリストリングからの金額を使用
+$amount = $request->input('amount'); // 脆弱！
+
+// ✓ 良い例：データベースからの金額を使用
+$order = Order::findOrFail($orderId);
+$amount = $order->amount;
+```
+
+### ⏱️ トランザクション有効期限切れ
+
+`paymentUrl` と `transactionId` には有効期限があります（通常20分）。ユーザーが時間をかけすぎると、確認呼び出しが失敗します。
+
+* 有効期限を保存し、ユーザーにカウントダウンを表示。
+* 有効期限切れエラーを適切に処理し、ユーザーが決済を再開できるようにする。
 
 ## テスト
 
