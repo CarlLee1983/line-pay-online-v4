@@ -4,37 +4,37 @@
 [![PHP Version](https://img.shields.io/packagist/php-v/carllee/line-pay-online-v4)](https://packagist.org/packages/carllee/line-pay-online-v4)
 [![License](https://img.shields.io/github/license/CarlLee1983/line-pay-online-v4-php)](LICENSE)
 
-現代化、類型安全的 LINE Pay Online V4 API PHP SDK，支援 Laravel 框架。
+モダンでタイプセーフな LINE Pay Online V4 API PHP SDK。Laravel対応。
 
 **🌐 Language / 語言 / 言語 / ภาษา:**
 [English](./README.md) | [繁體中文](./README_ZH.md) | [日本語](./README_JA.md) | [ภาษาไทย](./README_TH.md)
 
-## 功能特色
+## 機能
 
-- ✅ **PHP 8.1+** 嚴格類型
-- ✅ **Laravel 整合** - ServiceProvider、Facade、IoC 支援
-- ✅ **Builder Pattern** 建構請求
-- ✅ **類型安全枚舉** 貨幣、選項等
-- ✅ **完整驗證** API 呼叫前驗證
-- ✅ **PHPStan Level Max** 靜態分析
-- ✅ 基於 `carllee/line-pay-core-v4`
+- ✅ **PHP 8.1+** 厳格な型
+- ✅ **Laravel統合** - ServiceProvider、Facade、IoC対応
+- ✅ **Builderパターン** リクエスト構築
+- ✅ **タイプセーフなEnum** 通貨、オプション等
+- ✅ **完全なバリデーション** API呼び出し前
+- ✅ **PHPStan Level Max** 静的解析
+- ✅ `carllee/line-pay-core-v4` ベース
 
-## 系統需求
+## 要件
 
-- PHP 8.1 或更高版本
+- PHP 8.1以上
 - Composer
 - ext-json
 - ext-openssl
 
-## 安裝
+## インストール
 
 ```bash
 composer require carllee/line-pay-online-v4
 ```
 
-## 快速開始
+## クイックスタート
 
-### 標準 PHP 使用
+### 標準PHP使用
 
 ```php
 use LinePay\Core\Config\LinePayConfig;
@@ -43,28 +43,28 @@ use LinePay\Online\Domain\PaymentPackage;
 use LinePay\Online\Domain\PaymentProduct;
 use LinePay\Online\Enums\Currency;
 
-// 建立設定
+// 設定を作成
 $config = new LinePayConfig(
     channelId: getenv('LINE_PAY_CHANNEL_ID'),
     channelSecret: getenv('LINE_PAY_CHANNEL_SECRET'),
     env: 'sandbox'
 );
 
-// 建立客戶端
+// クライアントを作成
 $client = new LinePayClient($config);
 
-// 建立包含產品的套件
+// 商品を含むパッケージを作成
 $package = new PaymentPackage(id: 'PKG-001', amount: 1000);
 $package->addProduct(new PaymentProduct(
-    name: '商品名稱',
+    name: '商品名',
     quantity: 1,
     price: 1000
 ));
 
-// 使用 Builder Pattern 請求付款
+// Builderパターンで決済をリクエスト
 $response = $client->payment()
     ->setAmount(1000)
-    ->setCurrency(Currency::TWD)
+    ->setCurrency(Currency::JPY)
     ->setOrderId('ORDER-' . time())
     ->addPackage($package)
     ->setRedirectUrls(
@@ -73,21 +73,21 @@ $response = $client->payment()
     )
     ->send();
 
-// 取得付款網址
+// 決済URLを取得
 $paymentUrl = $response['info']['paymentUrl']['web'];
 ```
 
-## Laravel 整合
+## Laravel統合
 
 ### 設定
 
-發布設定檔：
+設定ファイルを公開：
 
 ```bash
 php artisan vendor:publish --tag=linepay-config
 ```
 
-在 `.env` 中加入：
+`.env` に追加：
 
 ```env
 LINE_PAY_CHANNEL_ID=your-channel-id
@@ -96,7 +96,7 @@ LINE_PAY_ENV=sandbox
 LINE_PAY_TIMEOUT=20
 ```
 
-### 使用依賴注入
+### 依存性注入を使用
 
 ```php
 namespace App\Http\Controllers;
@@ -117,7 +117,7 @@ class PaymentController extends Controller
         
         $response = $this->linePay->payment()
             ->setAmount(1000)
-            ->setCurrency(Currency::TWD)
+            ->setCurrency(Currency::JPY)
             ->setOrderId('ORDER-' . time())
             ->addPackage($package)
             ->setRedirectUrls(
@@ -131,69 +131,68 @@ class PaymentController extends Controller
 }
 ```
 
-### 使用 Facade
+### Facadeを使用
 
 ```php
 use LinePay\Online\Laravel\LinePay;
-use LinePay\Online\Enums\Currency;
 
-// 確認付款
+// 決済を確認
 $response = LinePay::confirm(
     transactionId: $request->input('transactionId'),
     amount: 1000,
-    currency: 'TWD'
+    currency: 'JPY'
 );
 
-// 退款
+// 返金
 $response = LinePay::refund($transactionId, 500);
 ```
 
-## API 方法
+## APIメソッド
 
-### 請求付款
+### 決済リクエスト
 ```php
 $response = $client->payment()
     ->setAmount(1000)
-    ->setCurrency(Currency::TWD)
+    ->setCurrency(Currency::JPY)
     ->setOrderId('ORDER-001')
     ->addPackage($package)
     ->setRedirectUrls($confirmUrl, $cancelUrl)
     ->send();
 ```
 
-### 確認付款
+### 決済確認
 ```php
 $response = $client->confirm(
     transactionId: '1234567890123456789',
     amount: 1000,
-    currency: Currency::TWD
+    currency: Currency::JPY
 );
 ```
 
-### 請款
+### キャプチャ
 ```php
 $response = $client->capture(
     transactionId: '1234567890123456789',
     amount: 1000,
-    currency: Currency::TWD
+    currency: Currency::JPY
 );
 ```
 
-### 取消授權
+### 取消
 ```php
 $response = $client->void('1234567890123456789');
 ```
 
-### 退款
+### 返金
 ```php
-// 全額退款
+// 全額返金
 $response = $client->refund('1234567890123456789');
 
-// 部分退款
+// 一部返金
 $response = $client->refund('1234567890123456789', 500);
 ```
 
-### 查詢付款詳情
+### 決済詳細取得
 ```php
 $response = $client->getDetails(
     transactionIds: ['1234567890123456789'],
@@ -201,12 +200,12 @@ $response = $client->getDetails(
 );
 ```
 
-### 檢查付款狀態
+### 決済ステータス確認
 ```php
 $response = $client->checkStatus('1234567890123456789');
 ```
 
-## 錯誤處理
+## エラーハンドリング
 
 ```php
 use LinePay\Core\Errors\LinePayError;
@@ -214,21 +213,21 @@ use LinePay\Core\Errors\LinePayTimeoutError;
 use LinePay\Core\Errors\LinePayValidationError;
 
 try {
-    $response = $client->confirm($transactionId, 1000, Currency::TWD);
+    $response = $client->confirm($transactionId, 1000, Currency::JPY);
 } catch (LinePayValidationError $e) {
-    // 驗證錯誤（API 呼叫前）
-    echo "驗證錯誤: " . $e->getMessage();
+    // バリデーションエラー（API呼び出し前）
+    echo "バリデーションエラー: " . $e->getMessage();
 } catch (LinePayTimeoutError $e) {
-    // 請求逾時
-    echo "逾時 " . $e->getTimeout() . " 秒";
+    // タイムアウト
+    echo "タイムアウト " . $e->getTimeout() . " 秒";
 } catch (LinePayError $e) {
-    // API 錯誤
-    echo "錯誤代碼: " . $e->getReturnCode();
-    echo "錯誤訊息: " . $e->getReturnMessage();
+    // APIエラー
+    echo "エラーコード: " . $e->getReturnCode();
+    echo "エラーメッセージ: " . $e->getReturnMessage();
 }
 ```
 
-## 測試
+## テスト
 
 ```bash
 composer install
@@ -236,16 +235,16 @@ composer test
 composer analyze
 ```
 
-## 相關套件
+## 関連パッケージ
 
-- [`carllee/line-pay-core-v4`](https://github.com/CarlLee1983/line-pay-core-v4-php) - 核心 SDK（依賴）
-- [`carllee/line-pay-offline-v4`](https://github.com/CarlLee1983/line-pay-offline-v4-php) - Offline 付款 SDK
+- [`carllee/line-pay-core-v4`](https://github.com/CarlLee1983/line-pay-core-v4-php) - コアSDK（依存）
+- [`carllee/line-pay-offline-v4`](https://github.com/CarlLee1983/line-pay-offline-v4-php) - オフライン決済SDK
 
-## 授權
+## ライセンス
 
-MIT 授權 - 詳見 [LICENSE](LICENSE)。
+MIT License - 詳細は [LICENSE](LICENSE) を参照。
 
-## 資源
+## リソース
 
-- [LINE Pay API 文件](https://pay.line.me/documents/online_v3_en.html)
-- [LINE Pay 商家後台](https://pay.line.me/portal/tw/)
+- [LINE Pay APIドキュメント](https://pay.line.me/documents/online_v3_en.html)
+- [LINE Pay加盟店センター](https://pay.line.me/portal/jp/)
