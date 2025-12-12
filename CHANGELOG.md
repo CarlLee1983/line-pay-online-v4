@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-12-12
+
+### Fixed
+
+- 修正 Laravel Facade 的 `@method` 註解，使其與實際方法簽名一致
+- 將 `urlencode()` 改為 `rawurlencode()` 用於 URL 路徑參數，確保正確的 URL 編碼
+- 移除 `RequestPayment::toBody()` 中的重複驗證檢查，改用斷言
+
+### Changed
+
+- 在 `confirm()` 和 `capture()` 方法中加入金額驗證，確保 `amount > 0`
+- 改進 `RequestPayment` 中 `array_reduce` 的型別提示，明確指定 `PaymentProduct` 型別
+
 ## [1.0.0] - 2024-12-11
 
 ### Added
@@ -44,5 +57,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Requires `carllee/line-pay-core-v4` ^1.0
 - PHP 8.1+ required
 
-[Unreleased]: https://github.com/CarlLee1983/line-pay-online-v4-php/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/CarlLee1983/line-pay-online-v4-php/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/CarlLee1983/line-pay-online-v4-php/compare/v1.2.0...v1.2.1
 [1.0.0]: https://github.com/CarlLee1983/line-pay-online-v4-php/releases/tag/v1.0.0
