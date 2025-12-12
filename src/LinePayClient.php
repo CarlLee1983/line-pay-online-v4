@@ -75,11 +75,15 @@ class LinePayClient extends LinePayBaseClient
     {
         LinePayUtils::validateTransactionId($transactionId);
 
+        if ($amount <= 0) {
+            throw new \InvalidArgumentException('Amount must be greater than 0');
+        }
+
         $currencyValue = $currency instanceof Currency ? $currency->value : $currency;
 
         return $this->sendRequest(
             'POST',
-            '/v4/payments/' . urlencode($transactionId) . '/confirm',
+            '/v4/payments/' . rawurlencode($transactionId) . '/confirm',
             [
                 'amount' => $amount,
                 'currency' => $currencyValue,
@@ -100,11 +104,15 @@ class LinePayClient extends LinePayBaseClient
     {
         LinePayUtils::validateTransactionId($transactionId);
 
+        if ($amount <= 0) {
+            throw new \InvalidArgumentException('Amount must be greater than 0');
+        }
+
         $currencyValue = $currency instanceof Currency ? $currency->value : $currency;
 
         return $this->sendRequest(
             'POST',
-            '/v4/payments/authorizations/' . urlencode($transactionId) . '/capture',
+            '/v4/payments/authorizations/' . rawurlencode($transactionId) . '/capture',
             [
                 'amount' => $amount,
                 'currency' => $currencyValue,
@@ -125,7 +133,7 @@ class LinePayClient extends LinePayBaseClient
 
         return $this->sendRequest(
             'POST',
-            '/v4/payments/authorizations/' . urlencode($transactionId) . '/void',
+            '/v4/payments/authorizations/' . rawurlencode($transactionId) . '/void',
             []
         );
     }
@@ -149,7 +157,7 @@ class LinePayClient extends LinePayBaseClient
 
         return $this->sendRequest(
             'POST',
-            '/v4/payments/' . urlencode($transactionId) . '/refund',
+            '/v4/payments/' . rawurlencode($transactionId) . '/refund',
             $body
         );
     }
@@ -198,7 +206,7 @@ class LinePayClient extends LinePayBaseClient
 
         return $this->sendRequest(
             'GET',
-            '/v4/payments/requests/' . urlencode($transactionId) . '/check'
+            '/v4/payments/requests/' . rawurlencode($transactionId) . '/check'
         );
     }
 }

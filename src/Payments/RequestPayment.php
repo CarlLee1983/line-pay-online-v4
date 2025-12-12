@@ -7,6 +7,7 @@ namespace LinePay\Online\Payments;
 use LinePay\Core\Errors\LinePayValidationError;
 use LinePay\Online\Domain\PaymentOptions;
 use LinePay\Online\Domain\PaymentPackage;
+use LinePay\Online\Domain\PaymentProduct;
 use LinePay\Online\Domain\RedirectUrls;
 use LinePay\Online\Enums\Currency;
 use LinePay\Online\LinePayClient;
@@ -176,7 +177,7 @@ class RequestPayment
         foreach ($this->packages as $index => $pkg) {
             $productsTotal = array_reduce(
                 $pkg->getProducts(),
-                fn (int $sum, $prod) => $sum + ($prod->quantity * $prod->price),
+                fn (int $sum, PaymentProduct $prod) => $sum + ($prod->quantity * $prod->price),
                 0
             );
 
@@ -200,14 +201,11 @@ class RequestPayment
     {
         $this->validate();
 
-        if (
-            $this->amount === null ||
-            $this->currency === null ||
-            $this->orderId === null ||
-            $this->redirectUrls === null
-        ) {
-            throw new LinePayValidationError('Validation failed unexpectedly');
-        }
+        // After validation, these values are guaranteed to be non-null
+        assert($this->amount !== null);
+        assert($this->currency !== null);
+        assert($this->orderId !== null);
+        assert($this->redirectUrls !== null);
 
         $body = [
             'amount' => $this->amount,
