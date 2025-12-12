@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2025-12-12
+
+### Improved
+
+- Enhanced documentation with Payment Flow diagram and Common Pitfalls section
+  - Added Mermaid sequence diagram showing payment flow
+  - Optimized intro hook to emphasize Fluent Builder and Laravel support
+  - Added Laravel Package Discovery description
+  - Added "Common Pitfalls & Troubleshooting" section:
+    - Double Confirmation (Error 1198)
+    - Amount Mismatch (Error 1106)
+    - Transaction Expiration
+- Multi-language documentation (EN/ZH/JA/TH) fully synchronized
+
 ## [1.2.1] - 2025-12-12
 
 ### Fixed
@@ -57,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Requires `carllee/line-pay-core-v4` ^1.0
 - PHP 8.1+ required
 
-[Unreleased]: https://github.com/CarlLee1983/line-pay-online-v4-php/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/CarlLee1983/line-pay-online-v4-php/compare/v1.2.2...HEAD
+[1.2.2]: https://github.com/CarlLee1983/line-pay-online-v4-php/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/CarlLee1983/line-pay-online-v4-php/compare/v1.2.0...v1.2.1
 [1.0.0]: https://github.com/CarlLee1983/line-pay-online-v4-php/releases/tag/v1.0.0
