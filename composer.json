@@ -1,6 +1,6 @@
 {
     "name": "carllee/line-pay-online-v4",
-    "description": "LINE Pay Online V4 API SDK for PHP. Type-safe, PSR-4 compliant, with Builder Pattern support.",
+    "description": "LINE Pay Online V4 API SDK for PHP. Type-safe, PSR-4 compliant, with Builder Pattern and Laravel support.",
     "type": "library",
     "keywords": [
         "line",
@@ -11,6 +11,7 @@
         "api",
         "sdk",
         "php",
+        "laravel",
         "ecommerce",
         "fintech",
         "taiwan",
@@ -39,7 +40,8 @@
     "require-dev": {
         "phpunit/phpunit": "^10.0",
         "phpstan/phpstan": "^1.10 || ^2.0",
-        "friendsofphp/php-cs-fixer": "^3.0"
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "orchestra/testbench": "^8.0 || ^9.0"
     },
     "autoload": {
         "psr-4": {
@@ -60,6 +62,16 @@
     },
     "config": {
         "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LinePay\\Online\\Laravel\\LinePayServiceProvider"
+            ],
+            "aliases": {
+                "LinePay": "LinePay\\Online\\Laravel\\LinePay"
+            }
+        }
     },
     "minimum-stability": "stable",
     "prefer-stable": true

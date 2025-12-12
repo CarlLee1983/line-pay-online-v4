@@ -1,19 +1,23 @@
 # LINE Pay Online V4 PHP SDK
 
-Modern, type-safe LINE Pay Online V4 API SDK for PHP.
+[![CI](https://github.com/CarlLee1983/line-pay-online-v4-php/actions/workflows/ci.yml/badge.svg)](https://github.com/CarlLee1983/line-pay-online-v4-php/actions/workflows/ci.yml)
+[![PHP Version](https://img.shields.io/packagist/php-v/carllee/line-pay-online-v4)](https://packagist.org/packages/carllee/line-pay-online-v4)
+[![License](https://img.shields.io/github/license/CarlLee1983/line-pay-online-v4-php)](LICENSE)
 
-[繁體中文](./README_ZH.md) | English
+Modern, type-safe LINE Pay Online V4 API SDK for PHP with Laravel support.
+
+**🌐 Language / 語言 / 言語 / ภาษา:**
+[English](./README.md) | [繁體中文](./README_ZH.md) | [日本語](./README_JA.md) | [ภาษาไทย](./README_TH.md)
 
 ## Features
 
-- ✅ PHP 8.1+ with strict types
-- ✅ PSR-4 autoloading
-- ✅ Builder Pattern for request construction
-- ✅ Type-safe enums for currencies and options
-- ✅ Comprehensive validation before API calls
-- ✅ Full PHPDoc documentation
-- ✅ PHPStan Level Max static analysis
-- ✅ Depends on `carllee/line-pay-core-v4`
+- ✅ **PHP 8.1+** with strict types
+- ✅ **Laravel Integration** - ServiceProvider, Facade, IoC support
+- ✅ **Builder Pattern** for request construction
+- ✅ **Type-safe Enums** for currencies and options
+- ✅ **Comprehensive Validation** before API calls
+- ✅ **PHPStan Level Max** static analysis
+- ✅ Built on `carllee/line-pay-core-v4`
 
 ## Requirements
 
@@ -30,6 +34,8 @@ composer require carllee/line-pay-online-v4
 
 ## Quick Start
 
+### Standard PHP Usage
+
 ```php
 use LinePay\Core\Config\LinePayConfig;
 use LinePay\Online\LinePayClient;
@@ -41,7 +47,7 @@ use LinePay\Online\Enums\Currency;
 $config = new LinePayConfig(
     channelId: getenv('LINE_PAY_CHANNEL_ID'),
     channelSecret: getenv('LINE_PAY_CHANNEL_SECRET'),
-    env: 'sandbox' // or 'production'
+    env: 'sandbox'
 );
 
 // Create client
@@ -69,7 +75,77 @@ $response = $client->payment()
 
 // Get payment URL
 $paymentUrl = $response['info']['paymentUrl']['web'];
-$transactionId = $response['info']['transactionId'];
+```
+
+## Laravel Integration
+
+### Configuration
+
+Publish the config file:
+
+```bash
+php artisan vendor:publish --tag=linepay-config
+```
+
+Add to your `.env`:
+
+```env
+LINE_PAY_CHANNEL_ID=your-channel-id
+LINE_PAY_CHANNEL_SECRET=your-channel-secret
+LINE_PAY_ENV=sandbox
+LINE_PAY_TIMEOUT=20
+```
+
+### Using Dependency Injection
+
+```php
+namespace App\Http\Controllers;
+
+use LinePay\Online\LinePayClient;
+use LinePay\Online\Domain\PaymentPackage;
+use LinePay\Online\Enums\Currency;
+
+class PaymentController extends Controller
+{
+    public function __construct(
+        private LinePayClient $linePay
+    ) {}
+
+    public function createPayment()
+    {
+        $package = new PaymentPackage(id: 'PKG-001', amount: 1000);
+        
+        $response = $this->linePay->payment()
+            ->setAmount(1000)
+            ->setCurrency(Currency::TWD)
+            ->setOrderId('ORDER-' . time())
+            ->addPackage($package)
+            ->setRedirectUrls(
+                route('payment.confirm'),
+                route('payment.cancel')
+            )
+            ->send();
+
+        return redirect($response['info']['paymentUrl']['web']);
+    }
+}
+```
+
+### Using Facade
+
+```php
+use LinePay\Online\Laravel\LinePay;
+use LinePay\Online\Enums\Currency;
+
+// Confirm payment
+$response = LinePay::confirm(
+    transactionId: $request->input('transactionId'),
+    amount: 1000,
+    currency: 'TWD'
+);
+
+// Refund
+$response = LinePay::refund($transactionId, 500);
 ```
 
 ## API Methods
@@ -142,7 +218,6 @@ try {
 } catch (LinePayValidationError $e) {
     // Validation error (before API call)
     echo "Validation Error: " . $e->getMessage();
-    echo "Field: " . $e->getField();
 } catch (LinePayTimeoutError $e) {
     // Request timeout
     echo "Timeout after " . $e->getTimeout() . " seconds";
@@ -150,14 +225,6 @@ try {
     // API error
     echo "Error Code: " . $e->getReturnCode();
     echo "Error Message: " . $e->getReturnMessage();
-    
-    if ($e->isAuthError()) {
-        // Authentication error (1xxx)
-    } elseif ($e->isPaymentError()) {
-        // Payment error (2xxx)
-    } elseif ($e->isInternalError()) {
-        // Internal error (9xxx)
-    }
 }
 ```
 
@@ -166,7 +233,13 @@ try {
 ```bash
 composer install
 composer test
+composer analyze
 ```
+
+## Related Packages
+
+- [`carllee/line-pay-core-v4`](https://github.com/CarlLee1983/line-pay-core-v4-php) - Core SDK (dependency)
+- [`carllee/line-pay-offline-v4`](https://github.com/CarlLee1983/line-pay-offline-v4-php) - Offline Payment SDK
 
 ## License
 
