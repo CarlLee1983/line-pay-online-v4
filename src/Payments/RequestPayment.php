@@ -54,7 +54,7 @@ class RequestPayment
     /**
      * Sets the total payment amount.
      *
-     * @param int $amount The total transaction amount (must be non-negative)
+     * @param int $amount The total transaction amount (must be greater than 0)
      *
      * @return $this
      */
@@ -143,8 +143,8 @@ class RequestPayment
      */
     public function validate(): void
     {
-        if ($this->amount === null || $this->amount < 0) {
-            throw new LinePayValidationError('Amount is required and must be non-negative', 'amount');
+        if ($this->amount === null || $this->amount <= 0) {
+            throw new LinePayValidationError('Amount is required and must be greater than 0', 'amount');
         }
         if ($this->currency === null) {
             throw new LinePayValidationError('Currency is required', 'currency');

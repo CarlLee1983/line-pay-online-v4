@@ -43,9 +43,18 @@ class LinePayServiceProvider extends ServiceProvider implements DeferrableProvid
             /** @var array{channel_id?: string, channel_secret?: string, env?: string, timeout?: int} $config */
             $config = $configRepo->get('linepay', []);
 
+            $channelId = $config['channel_id'] ?? '';
+            $channelSecret = $config['channel_secret'] ?? '';
+
+            if ($channelId === '' || $channelSecret === '') {
+                throw new \RuntimeException(
+                    'LINE Pay configuration is incomplete. Please set LINE_PAY_CHANNEL_ID and LINE_PAY_CHANNEL_SECRET in your .env file.'
+                );
+            }
+
             $linePayConfig = new LinePayConfig(
-                channelId: $config['channel_id'] ?? '',
-                channelSecret: $config['channel_secret'] ?? '',
+                channelId: $channelId,
+                channelSecret: $channelSecret,
                 env: $config['env'] ?? 'sandbox',
                 timeout: $config['timeout'] ?? 20
             );
