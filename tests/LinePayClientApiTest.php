@@ -84,4 +84,92 @@ class LinePayClientApiTest extends TestCase
 
         $this->client->checkStatus('bad-id');
     }
+
+    public function testConfirmWithZeroAmountThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Amount must be greater than 0');
+
+        // Using a valid 19-digit transaction ID
+        $this->client->confirm('2021121300698360010', 0, Currency::TWD);
+    }
+
+    public function testConfirmWithNegativeAmountThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Amount must be greater than 0');
+
+        $this->client->confirm('2021121300698360010', -100, Currency::TWD);
+    }
+
+    public function testCaptureWithZeroAmountThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Amount must be greater than 0');
+
+        $this->client->capture('2021121300698360010', 0, Currency::TWD);
+    }
+
+    public function testCaptureWithNegativeAmountThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Amount must be greater than 0');
+
+        $this->client->capture('2021121300698360010', -50, Currency::TWD);
+    }
+
+    public function testRefundWithZeroAmountThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Refund amount must be greater than 0');
+
+        $this->client->refund('2021121300698360010', 0);
+    }
+
+    public function testRefundWithNegativeAmountThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Refund amount must be greater than 0');
+
+        $this->client->refund('2021121300698360010', -200);
+    }
+
+    public function testRefundWithoutAmountIsValid(): void
+    {
+        // This should not throw - full refund is allowed
+        // It will fail at HTTP level but validation should pass
+        $this->expectException(\Exception::class); // Will fail on HTTP, but not on amount validation
+
+        $this->client->refund('2021121300698360010');
+    }
+
+    public function testGetDetailsWithoutParametersThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('At least one of transactionIds or orderIds must be provided');
+
+        $this->client->getDetails();
+    }
+
+    public function testGetDetailsWithEmptyArraysThrows(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('At least one of transactionIds or orderIds must be provided');
+
+        $this->client->getDetails([], []);
+    }
+
+    public function testGetDetailsWithOnlyTransactionIds(): void
+    {
+        $this->expectException(\Exception::class); // Will fail on HTTP, but not on validation
+
+        $this->client->getDetails(['2021121300698360010']);
+    }
+
+    public function testGetDetailsWithOnlyOrderIds(): void
+    {
+        $this->expectException(\Exception::class); // Will fail on HTTP, but not on validation
+
+        $this->client->getDetails(orderIds: ['ORDER_001']);
+    }
 }

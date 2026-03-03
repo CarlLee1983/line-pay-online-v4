@@ -142,13 +142,17 @@ class LinePayClient extends LinePayBaseClient
      * Refund Payment (POST /v4/payments/{transactionId}/refund).
      *
      * @param string   $transactionId 交易 ID（19 位數字）
-     * @param int|null $refundAmount  退款金額（可選，不指定則全額退款）
+     * @param int|null $refundAmount  退款金額（可選，不指定則全額退款；若指定則必須大於 0）
      *
      * @return array<string, mixed> API Response
      */
     public function refund(string $transactionId, ?int $refundAmount = null): array
     {
         LinePayUtils::validateTransactionId($transactionId);
+
+        if ($refundAmount !== null && $refundAmount <= 0) {
+            throw new \InvalidArgumentException('Refund amount must be greater than 0');
+        }
 
         $body = [];
         if ($refundAmount !== null) {
@@ -176,13 +180,22 @@ class LinePayClient extends LinePayBaseClient
         ?array $orderIds = null,
         ?string $fields = null
     ): array {
+        $hasTransactionIds = $transactionIds !== null && count($transactionIds) > 0;
+        $hasOrderIds = $orderIds !== null && count($orderIds) > 0;
+
+        if (!$hasTransactionIds && !$hasOrderIds) {
+            throw new \InvalidArgumentException(
+                'At least one of transactionIds or orderIds must be provided'
+            );
+        }
+
         $params = [];
 
-        if ($transactionIds !== null && count($transactionIds) > 0) {
+        if ($hasTransactionIds) {
             $params['transactionId'] = implode(',', $transactionIds);
         }
 
-        if ($orderIds !== null && count($orderIds) > 0) {
+        if ($hasOrderIds) {
             $params['orderId'] = implode(',', $orderIds);
         }
 

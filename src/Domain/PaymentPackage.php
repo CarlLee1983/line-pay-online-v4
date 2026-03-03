@@ -9,6 +9,10 @@ namespace LinePay\Online\Domain;
  *
  * Represents a package containing products.
  * The total amount of products must match the package amount.
+ *
+ * Supports both mutable (addProduct) and immutable (withProduct) patterns:
+ * - addProduct(): Fluent interface for builder pattern
+ * - withProduct(): Returns new instance for immutable pattern
  */
 class PaymentPackage
 {
@@ -20,21 +24,26 @@ class PaymentPackage
     /**
      * Create a new PaymentPackage instance.
      *
-     * @param string      $id      Unique Package ID
-     * @param int         $amount  Total Amount for this package
-     * @param string|null $name    Name of the package (Optional)
-     * @param int|null    $userFee User Fee (Optional)
+     * @param string                 $id       Unique Package ID
+     * @param int                    $amount   Total Amount for this package
+     * @param string|null            $name     Name of the package (Optional)
+     * @param int|null               $userFee  User Fee (Optional)
+     * @param PaymentProduct[]|null  $products Initial products (Optional)
      */
     public function __construct(
         public readonly string $id,
         public readonly int $amount,
         public readonly ?string $name = null,
-        public readonly ?int $userFee = null
+        public readonly ?int $userFee = null,
+        ?array $products = null
     ) {
+        if ($products !== null) {
+            $this->products = $products;
+        }
     }
 
     /**
-     * Add a product to the package.
+     * Add a product to the package (mutable, returns $this for fluent interface).
      *
      * @param PaymentProduct $product
      *
@@ -45,6 +54,24 @@ class PaymentPackage
         $this->products[] = $product;
 
         return $this;
+    }
+
+    /**
+     * Create a new package instance with an additional product (immutable pattern).
+     *
+     * @param PaymentProduct $product
+     *
+     * @return self A new PaymentPackage instance
+     */
+    public function withProduct(PaymentProduct $product): self
+    {
+        return new self(
+            id: $this->id,
+            amount: $this->amount,
+            name: $this->name,
+            userFee: $this->userFee,
+            products: [...$this->products, $product]
+        );
     }
 
     /**

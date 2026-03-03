@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LinePay\Online\Tests;
 
+use InvalidArgumentException;
 use LinePay\Online\Domain\PaymentOptions;
 use LinePay\Online\Domain\PaymentPackage;
 use LinePay\Online\Domain\PaymentProduct;
@@ -140,5 +141,99 @@ class DomainTest extends TestCase
         $array = $options->toArray();
 
         $this->assertEmpty($array);
+    }
+
+    public function testPaymentOptionsPartial(): void
+    {
+        $options = new PaymentOptions(
+            capture: true,
+            locale: 'en-US'
+        );
+
+        $array = $options->toArray();
+
+        $this->assertArrayHasKey('payment', $array);
+        $this->assertArrayHasKey('display', $array);
+        $this->assertArrayNotHasKey('extra', $array);
+    }
+
+    public function testRedirectUrlsWithInvalidConfirmUrl(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid confirmUrl format');
+
+        new RedirectUrls(
+            confirmUrl: 'not-a-url',
+            cancelUrl: 'https://example.com/cancel'
+        );
+    }
+
+    public function testRedirectUrlsWithInvalidCancelUrl(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid cancelUrl format');
+
+        new RedirectUrls(
+            confirmUrl: 'https://example.com/confirm',
+            cancelUrl: 'invalid-url'
+        );
+    }
+
+    public function testRedirectUrlsWithHttpUrl(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must use HTTPS scheme');
+
+        new RedirectUrls(
+            confirmUrl: 'http://example.com/confirm',
+            cancelUrl: 'https://example.com/cancel'
+        );
+    }
+
+    public function testPaymentPackageWithInitialProducts(): void
+    {
+        $product1 = new PaymentProduct('Product 1', 1, 50);
+        $product2 = new PaymentProduct('Product 2', 1, 50);
+
+        $package = new PaymentPackage(
+            id: 'PKG-001',
+            amount: 100,
+            products: [$product1, $product2]
+        );
+
+        $products = $package->getProducts();
+        $this->assertCount(2, $products);
+        $this->assertSame($product1, $products[0]);
+        $this->assertSame($product2, $products[1]);
+    }
+
+    public function testPaymentPackageWithProductImmutably(): void
+    {
+        $product1 = new PaymentProduct('Product 1', 1, 50);
+        $product2 = new PaymentProduct('Product 2', 1, 50);
+
+        $package1 = new PaymentPackage('PKG-001', 100, products: [$product1]);
+
+        $package2 = $package1->withProduct($product2);
+
+        // Ensure package1 is unchanged
+        $this->assertCount(1, $package1->getProducts());
+        // Ensure package2 has both products
+        $this->assertCount(2, $package2->getProducts());
+        // Ensure they are different instances
+        $this->assertNotSame($package1, $package2);
+    }
+
+    public function testPaymentPackageMutableAddProduct(): void
+    {
+        $product1 = new PaymentProduct('Product 1', 1, 50);
+        $product2 = new PaymentProduct('Product 2', 1, 50);
+
+        $package = new PaymentPackage('PKG-001', 100);
+        $returned = $package->addProduct($product1)->addProduct($product2);
+
+        // Ensure fluent interface works
+        $this->assertSame($package, $returned);
+        $this->assertCount(2, $package->getProducts());
     }
 }

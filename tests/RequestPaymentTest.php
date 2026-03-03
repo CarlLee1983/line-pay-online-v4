@@ -161,4 +161,50 @@ class RequestPaymentTest extends TestCase
             ->setRedirectUrls('https://example.com/confirm', 'https://example.com/cancel')
             ->validate();
     }
+
+    public function testValidateWithZeroAmount(): void
+    {
+        $this->expectException(LinePayValidationError::class);
+        $this->expectExceptionMessage('Amount is required and must be greater than 0');
+
+        $package = new PaymentPackage('PKG-001', 0);
+        $package->addProduct(new PaymentProduct('Product', 0, 0));
+
+        $this->client->payment()
+            ->setAmount(0)
+            ->setCurrency(Currency::TWD)
+            ->setOrderId('ORDER-001')
+            ->addPackage($package)
+            ->setRedirectUrls('https://example.com/confirm', 'https://example.com/cancel')
+            ->validate();
+    }
+
+    public function testValidateWithNegativeAmount(): void
+    {
+        $this->expectException(LinePayValidationError::class);
+        $this->expectExceptionMessage('Amount is required and must be greater than 0');
+
+        $this->client->payment()
+            ->setAmount(-100)
+            ->setCurrency(Currency::TWD)
+            ->setOrderId('ORDER-001')
+            ->validate();
+    }
+
+    public function testValidateWithInvalidRedirectUrls(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid');
+
+        $package = new PaymentPackage('PKG-001', 100);
+        $package->addProduct(new PaymentProduct('Product', 1, 100));
+
+        $this->client->payment()
+            ->setAmount(100)
+            ->setCurrency(Currency::TWD)
+            ->setOrderId('ORDER-001')
+            ->addPackage($package)
+            ->setRedirectUrls('not-a-url', 'https://example.com/cancel')
+            ->validate();
+    }
 }
