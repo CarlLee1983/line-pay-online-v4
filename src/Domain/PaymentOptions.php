@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LinePay\Online\Domain;
 
+use LinePay\Online\Enums\ConfirmUrlType;
 use LinePay\Online\Enums\PayType;
 
 /**
@@ -14,12 +15,13 @@ use LinePay\Online\Enums\PayType;
 class PaymentOptions
 {
     /**
-     * @param bool|null    $capture                Whether to capture immediately
-     * @param PayType|null $payType                Payment type (NORMAL or PREAPPROVED)
-     * @param string|null  $locale                 Display locale (e.g., 'en', 'zh-Hant')
-     * @param bool|null    $checkConfirmUrlBrowser Whether to check confirmUrl browser
-     * @param string|null  $branchName             Branch name
-     * @param string|null  $branchId               Branch ID
+     * @param bool|null              $capture                Whether to capture immediately
+     * @param PayType|null           $payType                Payment type (NORMAL or PREAPPROVED)
+     * @param string|null            $locale                 Display locale (e.g., 'en', 'zh-Hant')
+     * @param bool|null              $checkConfirmUrlBrowser Whether to check confirmUrl browser
+     * @param string|null            $branchName             Branch name
+     * @param string|null            $branchId               Branch ID
+     * @param ConfirmUrlType|null    $confirmUrlType         Confirmation URL type (CLIENT or SERVER)
      */
     public function __construct(
         public readonly ?bool $capture = null,
@@ -27,7 +29,8 @@ class PaymentOptions
         public readonly ?string $locale = null,
         public readonly ?bool $checkConfirmUrlBrowser = null,
         public readonly ?string $branchName = null,
-        public readonly ?string $branchId = null
+        public readonly ?string $branchId = null,
+        public readonly ?ConfirmUrlType $confirmUrlType = null
     ) {
     }
 
@@ -38,44 +41,26 @@ class PaymentOptions
      */
     public function toArray(): array
     {
-        $options = [];
+        $payment = array_filter([
+            'capture' => $this->capture,
+            'payType' => $this->payType?->value,
+            'confirmUrlType' => $this->confirmUrlType?->value,
+        ], fn ($v) => $v !== null);
 
-        // Payment options
-        $payment = [];
-        if ($this->capture !== null) {
-            $payment['capture'] = $this->capture;
-        }
-        if ($this->payType !== null) {
-            $payment['payType'] = $this->payType->value;
-        }
-        if (count($payment) > 0) {
-            $options['payment'] = $payment;
-        }
+        $display = array_filter([
+            'locale' => $this->locale,
+            'checkConfirmUrlBrowser' => $this->checkConfirmUrlBrowser,
+        ], fn ($v) => $v !== null);
 
-        // Display options
-        $display = [];
-        if ($this->locale !== null) {
-            $display['locale'] = $this->locale;
-        }
-        if ($this->checkConfirmUrlBrowser !== null) {
-            $display['checkConfirmUrlBrowser'] = $this->checkConfirmUrlBrowser;
-        }
-        if (count($display) > 0) {
-            $options['display'] = $display;
-        }
+        $extra = array_filter([
+            'branchName' => $this->branchName,
+            'branchId' => $this->branchId,
+        ], fn ($v) => $v !== null);
 
-        // Extra options
-        $extra = [];
-        if ($this->branchName !== null) {
-            $extra['branchName'] = $this->branchName;
-        }
-        if ($this->branchId !== null) {
-            $extra['branchId'] = $this->branchId;
-        }
-        if (count($extra) > 0) {
-            $options['extra'] = $extra;
-        }
-
-        return $options;
+        return array_filter([
+            'payment' => $payment,
+            'display' => $display,
+            'extra' => $extra,
+        ], fn ($v) => !empty($v));
     }
 }

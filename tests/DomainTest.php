@@ -9,6 +9,8 @@ use LinePay\Online\Domain\PaymentOptions;
 use LinePay\Online\Domain\PaymentPackage;
 use LinePay\Online\Domain\PaymentProduct;
 use LinePay\Online\Domain\RedirectUrls;
+use LinePay\Online\Enums\ConfirmUrlType;
+use LinePay\Online\Enums\Currency;
 use LinePay\Online\Enums\PayType;
 use PHPUnit\Framework\TestCase;
 
@@ -235,5 +237,60 @@ class DomainTest extends TestCase
         // Ensure fluent interface works
         $this->assertSame($package, $returned);
         $this->assertCount(2, $package->getProducts());
+    }
+
+    public function testCurrencyIsSupported(): void
+    {
+        // Test supported currencies
+        $this->assertTrue(Currency::TWD->isSupported());
+        $this->assertTrue(Currency::JPY->isSupported());
+        $this->assertTrue(Currency::THB->isSupported());
+
+        // Test unsupported currencies
+        $this->assertFalse(Currency::USD->isSupported());
+        $this->assertFalse(Currency::EUR->isSupported());
+        $this->assertFalse(Currency::GBP->isSupported());
+        $this->assertFalse(Currency::INR->isSupported());
+    }
+
+    public function testPaymentOptionsWithConfirmUrlType(): void
+    {
+        $options = new PaymentOptions(
+            capture: true,
+            confirmUrlType: ConfirmUrlType::CLIENT
+        );
+
+        $array = $options->toArray();
+
+        $this->assertArrayHasKey('payment', $array);
+        /** @var array<string, mixed> $payment */
+        $payment = $array['payment'];
+        $this->assertTrue($payment['capture']);
+        $this->assertEquals('CLIENT', $payment['confirmUrlType']);
+    }
+
+    public function testPaymentOptionsOptimizedToArray(): void
+    {
+        // Test with all options set
+        $options1 = new PaymentOptions(
+            capture: false,
+            payType: PayType::NORMAL,
+            locale: 'en-US',
+            checkConfirmUrlBrowser: false,
+            branchName: 'Test Branch',
+            branchId: 'BRANCH-001',
+            confirmUrlType: ConfirmUrlType::SERVER
+        );
+
+        $array1 = $options1->toArray();
+        $this->assertCount(3, $array1);
+        $this->assertArrayHasKey('payment', $array1);
+        $this->assertArrayHasKey('display', $array1);
+        $this->assertArrayHasKey('extra', $array1);
+
+        // Test with no options set
+        $options2 = new PaymentOptions();
+        $array2 = $options2->toArray();
+        $this->assertEmpty($array2);
     }
 }
